@@ -1,41 +1,77 @@
-package org.katas.refactoring;
+package cashregister;
 
+
+import org.junit.jupiter.api.AfterEach;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
+public class CashRegisterTest {
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
 
-public class OrderReceiptTest {
+    @BeforeEach
+    public void setUpStreams(){
+        System.setOut(new PrintStream(outContent));
+    }
+    @AfterEach
+    public void restoreSreams(){
+        System.setOut(originalOut);
+    }
+//    @Test
+//    public void should_print_the_real_purchase_when_call_process() {
+//        //given
+//        Purchase purchase = new Purchase(new Item[]{
+//                new Item("A",1),
+//                new Item("B",2),
+//                new Item("C",3),
+//        });
+//        CashRegister cashRegister = new CashRegister(new Printer());
+//        //when
+//
+//        //then
+//    }
+
     @Test
-    public void shouldPrintCustomerInformationOnOrder() {
-        Order order = new Order("Mr X", "Chicago, 60601", new ArrayList<LineItem>());
-        OrderReceipt receipt = new OrderReceipt(order);
-
-        String output = receipt.printReceipt();
-
-        assertThat(output).contains("Mr X", "Chicago, 60601");
+    public void should_print_the_stub_purchase_when_call_process() {
+        //given
+        Purchase purchase = new Purchase(new Item[]{
+                new Item("A",1),
+                new Item("B",2),
+                new Item("C",3),
+        });
+        CashRegister cashRegister = new CashRegister(new Printer(){
+            @Override
+            public void print(String printThis) {
+                System.out.print("stub:"+printThis);
+            }
+        });
+        //when
+        cashRegister.process(purchase);
+        //then
+        assertThat(outContent.toString()).isEqualTo("stub:A\t1.0\nB\t2.0\nC\t3.0\n");
     }
 
     @Test
-    public void shouldPrintLineItemAndSalesTaxInformation() {
-        ArrayList<LineItem> lineItems = new ArrayList<LineItem>() {{
-            add(new LineItem("milk", 10.0, 2));
-            add(new LineItem("biscuits", 5.0, 5));
-            add(new LineItem("chocolate", 20.0, 1));
-        }};
-        OrderReceipt receipt = new OrderReceipt(new Order(null, null, lineItems));
-
-        String output = receipt.printReceipt();
-
-        assertThat(output).contains(
-                "milk\t10.0\t2\t20.0\n",
-                "biscuits\t5.0\t5\t25.0\n",
-                "chocolate\t20.0\t1\t20.0\n",
-                "Sales Tax\t6.5",
-                "Total Amount\t71.5"
-        );
+    public void should_verify_with_process_call_with_mockito() {
+        //given
+        Purchase purchase = new Purchase(new Item[]{
+                new Item("A",1),
+                new Item("B",2),
+                new Item("C",3),
+        });
+        Printer printer = mock(Printer.class);
+        CashRegister cashRegister = new CashRegister(printer);
+        //when
+        cashRegister.process(purchase);
+        //then
+        verify(printer).print("A\t1.0\nB\t2.0\nC\t3.0\n");
     }
 
 }
